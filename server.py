@@ -9,7 +9,7 @@ The basic idea behind creating this web server's first version is pretty simple:
 '''
 
 import http.server
-
+import os
 import sys
 
 
@@ -82,6 +82,17 @@ class RequestHandler2(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length",str(len(page)))
         self.end_headers()
         self.wfile.write(content)
+
+class RequestHandler3(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        try:
+            #Extract the full path of the requested file.
+            full_path = os.getcwd() + self.path
+
+            # Throw an execption on the server if the path does not exist
+            if not os.path.exists(full_path):
+                raise ServerException("'{0}' not found".format(self.path))
+            elif os.path.isFile(full_path):""
 
 
 if __name__ == '__main__':
