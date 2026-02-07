@@ -12,6 +12,9 @@ import http.server
 import os
 import sys
 
+class ServerException(Exception):
+    pass
+
 
 class RequestHandler(http.server.BaseHTTPRequestHandler):
     '''
@@ -91,8 +94,18 @@ class RequestHandler3(http.server.BaseHTTPRequestHandler):
 
             # Throw an execption on the server if the path does not exist
             if not os.path.exists(full_path):
+                #The {0} in the message of exception is just to show that we are going to take the first item of the list from format(self.path) which means that format returns a list
                 raise ServerException("'{0}' not found".format(self.path))
-            elif os.path.isFile(full_path):""
+            #If we find that the full path that has been requested for from our desktop is a file we are going to process it
+            elif os.path.isFile(full_path):
+                self.handle_file(full_path)
+            #If the path is not a file but is any other thing we are going to not handle it
+            else:
+                raise ServerException("Found an Unknown object '{0}".format(self.path))
+        except Exception as msg:
+                self.handle_error(msg)
+
+            
 
 
 if __name__ == '__main__':
