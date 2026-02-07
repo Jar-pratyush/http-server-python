@@ -104,8 +104,41 @@ class RequestHandler3(http.server.BaseHTTPRequestHandler):
                 raise ServerException("Found an Unknown object '{0}".format(self.path))
         except Exception as msg:
                 self.handle_error(msg)
+    
+    def handle_file(self,full_path):
+        try:
+            with open(full_path, 'rb') as reader:
+                content = reader.read()
+            self.send_content(content)
+        except IOError as msg:
+            msg = f"'{self.path}' cannot be read: {msg}"
+            self.handle_error(msg)
+        #File is opened in binary mode 'rb' {'b' stands for binary} to ensure that pythin does not change the byte sequence to make it look like a windows line ending. 
+        # Do not read the whole file into memory in real life scenarios as file might be of millions of gigabytes of data.
+        Error_Page = """\
+<html>
+<body>
+<h1>Error Accesing Path {path}</h1>
+<p>msg</p>
+</body>
+</html>
+"""
 
-            
+def handle_error(self,msg):
+    content = self.Error_Page.format(path=self.path,msg=msg)
+    self.send_content(content)   
+
+def handle_error(self,msg):
+    content = self.Error_Page.format(path=self.path,msg=msg) 
+    self.send_content(content,404)
+
+def send_content(self,content,status=200):
+    self.send_response(status)
+    self.send_header("Contet-type","text/html")
+    self.send_header("Content-Length",str(len(content)))
+    self.end_headers()
+    content = content.encode('utf-8')
+    self.wfile.write(content) 
 
 
 if __name__ == '__main__':
@@ -121,3 +154,50 @@ if __name__ == '__main__':
         server.server_close() #Immediately free the port 8080
         print("Program terminated manually!")
         sys.exit(0)
+
+'''
+Comment on Using 'rb' file mode - 
+
+Windows computers mark the end of a line with two characters: Carriage Return + Line Feed (\r\n).
+
+Linux/Mac computers use just one: Line Feed (\n).
+
+If you open a file in standard text mode ('r'), Python tries to be helpful. It acts as a translator. If it sees the Windows specific byte sequence (\r\n), it automatically converts it to Python's standard \n so your code looks the same regardless of which OS you are on.
+
+Imagine you are reading a JPEG image or an .exe file. These files contain raw bytes that look like line endings but aren't.
+
+If a random sequence in an image file happens to be 0x0D 0x0A (the hex code for \r\n), and you open it in text mode, Python changes it to 0x0A.
+
+Result: The byte sequence changes, the checksum fails, and the image becomes corrupt.
+
+Using 'rb' tells Python: "Do not translate anything. Give me the raw data exactly as it sits on the hard drive." This ensures the byte sequence remains perfectly intact.
+
+Comment on not reading the whole file at once -
+
+Instead of swallowing the whole file, developers use a technique called Chunking (or Buffering/Streaming).
+
+Think of how you watch a movie on Netflix. You do not download the entire 4GB movie file before the video starts playing.
+
+Netflix downloads a small "chunk" (buffer) of the video (e.g., 10 seconds).
+
+Your browser displays that chunk.
+
+As you watch, the browser discards the old chunk and downloads the next 10 seconds.
+
+You can watch a massive movie with very little memory usage.
+
+
+In programming, rather than saying "Read everything," you create a loop that says:
+
+Open the file.
+
+Read a specific size (e.g., 4096 bytes or 1MB) into a temporary variable (the buffer).
+
+Process that chunk (e.g., calculate a hash, search for a word, or write it to another disk).
+
+Discard the chunk from memory to free up space.
+
+Repeat until the file ends.
+
+By doing this, your program's memory usage stays flat (e.g., using only 1MB of RAM) regardless of whether the file is 1GB, 1TB, or 1PB.
+'''
